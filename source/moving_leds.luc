@@ -1,0 +1,43 @@
+module moving_leds (
+    input clk,  // clock
+    input rst,  // reset
+    output ledoutput[64][24],
+    output io_led1,
+    output io_led2
+  ) {
+  
+  const COLOR_COUNT = 5; // number of colors to cycle through
+    
+  .clk(clk) {
+    .rst(rst) {
+      dff  color_index[8]; // count from 0 to COLOR_COUNT-1 to select next color
+      dff  color[24]; // 24-bit RGB color value
+      
+    }
+  }
+  always {
+    case (color_index.q) {
+      0: color.d = h620000;     // Green
+      1: color.d = h006200;     // Red
+      2: color.d = h000062;     // Blue
+      3: color.d = h626200;     // Purple
+      4: color.d = hFFFFFF;     // White
+    }
+    
+    if (clk == b1){
+      if (color_index.q == COLOR_COUNT-1){ // if at max color count, reset index
+        color_index.d = 0;}
+      else{
+        color_index.d = color_index.q + 1;} // else increment color index
+      
+      ledoutput = {color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q}; // set all LEDs to current color
+      io_led1 = 1;
+      io_led2 = 0;
+    }
+    else{
+      ledoutput = {hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF};
+      io_led1 = 0;
+      io_led2 = 1;
+    }
+  }
+}
