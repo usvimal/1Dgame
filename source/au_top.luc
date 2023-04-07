@@ -14,16 +14,15 @@ module au_top (
   
   sig rst;                  // reset signal
   
-  counter slowclock(#SIZE(26),#DIV(1), .clk(clk), .rst(rst));
+//  counter slowclock(#SIZE(26),#DIV(1), .clk(clk), .rst(rst));
+  moving_leds moving_leds(.clk(clk), .rst(rst));
   ws2812b_writer led_strip(#PIXEL_COUNT(64), .clk(clk), .rst(rst)); //set for 3 pixels
-  moving_leds moving_leds(.clk(slowclock.value[25]), .rst(rst));
   
   
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
-    dff ledcolor[64][24];
   }
   
   always {
@@ -38,12 +37,11 @@ module au_top (
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
     
-    ledcolor.d = moving_leds.ledoutput; 
-
+    
     led_strip.update=1; //sample write 
     io_led[0][0] = moving_leds.io_led1;
     io_led[0][1] = moving_leds.io_led2;
-    led_strip.color=ledcolor.q[led_strip.pixel]; 
+    led_strip.color= moving_leds.ledoutput[led_strip.pixel]; 
     outled=led_strip.led;
   }
 }

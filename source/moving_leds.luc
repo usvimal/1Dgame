@@ -7,37 +7,48 @@ module moving_leds (
   ) {
   
   const COLOR_COUNT = 5; // number of colors to cycle through
+  sig x;
+  sig y;
+  
+  // Registers to store color index and color value
+  dff  color_index[8](.clk(clk), .rst(rst)); // count from 0 to COLOR_COUNT-1 to select next color
+  dff  color[24](.clk(clk), .rst(rst)); // 24-bit RGB color value
+  
+  // Slow clock counter and edge detector  
+  counter slowClock(#SIZE(1), #DIV(26), .clk(clk), .rst(rst));
+  edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
+  
     
-  .clk(clk) {
-    .rst(rst) {
-      dff  color_index[8]; // count from 0 to COLOR_COUNT-1 to select next color
-      dff  color[24]; // 24-bit RGB color value
-      
-    }
-  }
   always {
-    case (color_index.q) {
-      0: color.d = h620000;     // Green
-      1: color.d = h006200;     // Red
-      2: color.d = h000062;     // Blue
-      3: color.d = h626200;     // Purple
-      4: color.d = hFFFFFF;     // White
-    }
+  
+    slowClockEdge.in = slowClock.value;
     
-    if (clk == b1){
+    
+    color.d = hFFFFFF;
+    x = 0;
+    y = 1;
+    
+    if (slowClockEdge.out == b1){
+      x = 1;
+      y = 0;
       if (color_index.q == COLOR_COUNT-1){ // if at max color count, reset index
         color_index.d = 0;}
       else{
         color_index.d = color_index.q + 1;} // else increment color index
       
-      ledoutput = {color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q}; // set all LEDs to current color
-      io_led1 = 1;
-      io_led2 = 0;
+      case (color_index.q) {
+        0: color.d = h620000;     // Green
+        1: color.d = h006200;     // Red
+        2: color.d = h000062;     // Blue
+        3: color.d = h626200;     // Purple
+        4: color.d = hFFFFFF;     // White
+      }
+      
+      
     }
-    else{
-      ledoutput = {hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF,hFFFFFF};
-      io_led1 = 0;
-      io_led2 = 1;
-    }
+    ledoutput = {color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q, color.q}; // set all LEDs to current color
+    io_led1 = x;
+    io_led2 = y;
+    
   }
 }
