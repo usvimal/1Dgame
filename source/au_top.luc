@@ -38,7 +38,7 @@ module au_top (
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
     
-//    ledcolor.d = moving_leds.ledoutput; // blue for the third LED, red for the second LED, green for the first LED (nearest to the connector)
+    ledcolor.d = moving_leds.ledoutput; 
 
     led_strip.update=1; //sample write 
     io_led[0][0] = moving_leds.io_led1;
