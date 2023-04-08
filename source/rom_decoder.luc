@@ -1,0 +1,32 @@
+module rom_decoder (
+    input clk,  // clock
+    input rst,  // reset
+    input rom_maze[8][16],
+    input player_pos[8],
+    output out[64][24]
+  ) {
+  
+  const R = h006200;
+  const B = h620000;
+  const Y = h006262;
+  
+  var i;
+  var j;
+  var k;
+  
+  always {
+    for (i = 0; i<8; i++) {
+      for (j = 0; j<8; j++) {
+        out[(i*8)+j] = rom_maze[i][j+8] ? R:0; // assigns ith pixel to red(R) based on corresponding maze red value
+        if (rom_maze[i][j]) {
+          out[(i*8)+j] = Y; // keeps ith pixel value as yellow(Y) only if the corresponding maze yellow value is 1
+        } 
+      }
+    }
+    for (k = 0; k<8; k++) {
+      if (player_pos[k]) {
+        out[k] = B; // setting player_pos value to be blue(B)
+      }
+    }
+  }
+}
