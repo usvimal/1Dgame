@@ -1,0 +1,39 @@
+module rom_runner (
+	input clk,  // clock
+	input rst,  // reset
+	output out[8][16]
+  ) 
+
+{
+  const SLOWCLOCK_SIZE = 26;
+  
+  dff register[4](#INIT(b0000), .clk(clk), .rst(rst));
+  fsm run_rom(.clk(clk), .rst(rst)) = {WAIT, RUN};
+  rom rom(.clk(clk), .rst(rst));
+  
+  counter slowClock(#SIZE(SLOWCLOCK_SIZE), .clk(clk), .rst(rst));
+  edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
+  
+  always {
+    slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE-1];
+    
+    case(run_rom.q) {
+      run_rom.WAIT:
+        if (slowClockEdge.out == b1){ //only trigger change when slowClockEdge gives a 1
+      	    run_rom.d = run_rom.RUN;
+        }
+     
+      run_rom.RUN:
+        if (slowClockEdge.out == b1) {
+          if (register.q < 7) {
+            register.d = register.q + 1;
+          }
+          else {register.d = 0;}
+        }
+        
+    }
+    
+    rom.player_row = register.q;
+    out = rom.out;
+  }
+}

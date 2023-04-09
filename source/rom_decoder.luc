@@ -6,9 +6,9 @@ module rom_decoder (
     output out[64][24]
   ) {
   
-  const R = h006200;
-  const B = h620000;
-  const Y = h006262;
+  const R = h004800;
+  const B = h480000;
+  const Y = h004848;
   
   var i;
   var j;

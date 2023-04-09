@@ -9,7 +9,8 @@ module au_top (
     output io_seg [8],      // 7-segment LEDs on IO Shield
     output io_sel [4],      // Digit select on IO Shield
     input io_button [5],    // 5 buttons on IO Shield
-    input io_dip [3][8]     // DIP switches on IO Shield
+    input io_dip [3][8],     // DIP switches on IO Shield
+    input big_button
   ) {
 
   sig rst;                  // reset signal
@@ -17,13 +18,17 @@ module au_top (
 //  counter slowclock(#SIZE(1), #DIV(26), .clk(clk), .rst(rst));
   counter countup(#SIZE(4), #DIV(26), #TOP(15), .clk(clk), .rst(rst));
   ws2812b_writer led_strip(#PIXEL_COUNT(64), .clk(clk), .rst(rst)); //set for 64 pixels
-  rom rom(.ctr(countup.value), .clk(clk), .rst(rst));
-  rom_decoder rom_decoder(.rom_maze(rom.out), .player_pos(b01100000), .clk(clk), .rst(rst));
-
+  rom_runner rom_runner(.clk(clk), .rst(rst));
+  rom_decoder rom_decoder(.rom_maze(rom_runner.out), .player_pos(b01100000), .clk(clk), .rst(rst));
+  multi_seven_seg seg(.clk(clk), .rst(rst));
+  multi_dec_ctr dec_ctr(.clk(clk), .rst(rst));
+  
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
+    button_conditioner btn_cond_p1;
+    edge_detector edge_dt_btn_p1 (#RISE(1), #FALL(0));
     dff ledcolor[64][24];
   }
 
@@ -31,6 +36,10 @@ module au_top (
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
 
+    btn_cond_p1.in=big_button; 
+    edge_dt_btn_p1.in=btn_cond_p1.out;
+    dec_ctr.inc = edge_dt_btn_p1.out;
+    
     usb_tx = usb_rx;        // loop serial port
 
     led = 8h00;             // turn LEDs off
@@ -42,11 +51,17 @@ module au_top (
     ledcolor.d =rom_decoder.out;
     
     led_strip.update=1; //sample write 
-      io_led[0] = rom.out[0][7:0];
-      io_led[1] = rom.out[0][15:8];
-      io_led[2] = countup.value;
+      io_led[0] = rom_decoder.out[0][7:0]; // debugging rom values
+      io_led[1] = rom_decoder.out[0][15:8]; // debugging rom values
+      io_led[2] = countup.value; // debugging rom values
     
     led_strip.color=ledcolor.q[led_strip.pixel]; 
     outled=led_strip.led;
+    
+    //update seven_seg
+    seg.values = dec_ctr.digits;
+    io_seg = ~seg.seg;
+    io_sel = ~seg.sel;
+    
   }
 }
