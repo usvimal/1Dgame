@@ -1,0 +1,18 @@
+module shifter (
+    input alufn[6],
+    input x[16],
+    input y[16],
+    
+    output out[16]
+  ) {
+
+  always {
+    out = 0;
+    
+    case (alufn[1-:2]) {
+    b00: out = x << y[3-:4];
+    b01: out = x >> y[3-:4];
+    b11: out = $signed(x) >>> y[3-:4];
+    }
+  }
+}

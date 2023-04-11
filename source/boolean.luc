@@ -1,0 +1,21 @@
+module boolean (
+    input x[16],
+    input y[16],
+    input alufn[6],
+    output out[16]
+  ) {
+
+  always {
+    case(alufn[3-:3]) {
+      0:out = ~x; // NOT A
+      1:out = ~y; // NOT B
+      2:out = ~(x^y); // XNOR
+      3:out = x^y; // XOR
+      4:out = x&y; // AND
+      5:out = x; // A
+      6:out = y; // B
+      7:out = x|y; // OR
+      default: out = 16b0;
+    }
+  }
+}

@@ -3,59 +3,79 @@ module au_top (
     input rst_n,            // reset button (active low)
     output led [8],         // 8 user controllable LEDs
     input usb_rx,           // USB->Serial input
-    output outled,           // to LED strip, Br pin C49, connect LED Strip to 5V for power
+    output outled,          // to LED strip, Br pin C49, connect LED Strip to 5V for power
     output usb_tx,          // USB->Serial output
     output io_led [3][8],   // LEDs on IO Shield
     output io_seg [8],      // 7-segment LEDs on IO Shield
     output io_sel [4],      // Digit select on IO Shield
     input io_button [5],    // 5 buttons on IO Shield
-    input io_dip [3][8],     // DIP switches on IO Shield
-    input big_button
+    input io_dip [3][8],    // DIP switches on IO Shield
+    
+    // Game inputs
+    input left_button,      // left player input
+    input right_button,     // right player input
+    input reset_button      // Game reset input
   ) {
-
+  
   sig rst;                  // reset signal
   
-//  counter slowclock(#SIZE(1), #DIV(26), .clk(clk), .rst(rst));
-  counter countup(#SIZE(4), #DIV(26), #TOP(15), .clk(clk), .rst(rst));
+  //  counter slowclock(#SIZE(1), #DIV(26), .clk(clk), .rst(rst));
   ws2812b_writer led_strip(#PIXEL_COUNT(64), .clk(clk), .rst(rst)); //set for 64 pixels
-  rom_runner rom_runner(.clk(clk), .rst(rst));
-  rom_decoder rom_decoder(.rom_maze(rom_runner.out), .player_pos(b01100000), .clk(clk), .rst(rst));
-  multi_seven_seg seg(.clk(clk), .rst(rst));
-  multi_dec_ctr dec_ctr(.clk(clk), .rst(rst));
+  multi_seven_seg seg(.clk(clk), .rst(rst)); // initialize seven segment
+  multi_dec_ctr dec_ctr(.clk(clk), .rst(rst)); //initialize decimal counter
+  game_miniBeta gameMachine(.clk(clk), .rst(rst));
   
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
-    button_conditioner btn_cond_p1;
-    edge_detector edge_dt_btn_p1 (#RISE(1), #FALL(0));
+    button_conditioner btn_cond_left;
+    button_conditioner btn_cond_right;
+    button_conditioner btn_cond_reset;
+    
+    edge_detector edge_dt_btn_left (#RISE(1), #FALL(0));
+    edge_detector edge_dt_btn_right (#RISE(1), #FALL(0));
+    edge_detector edge_dt_btn_reset (#RISE(1), #FALL(0));
     dff ledcolor[64][24];
   }
-
+  
   always {
     reset_cond.in = ~rst_n; // input raw inverted reset signal
+    
+    btn_cond_left.in=left_button; // reduce bouncing effect of left_button
+    edge_dt_btn_left.in=btn_cond_left.out; //get the edge of left_button press
+    
+    btn_cond_right.in=right_button; // reduce bouncing effect of right_button
+    edge_dt_btn_right.in=btn_cond_right.out; //get the edge of right_button press
+    
+    btn_cond_reset.in=reset_button; // reduce bouncing effect of reset_button
+    edge_dt_btn_reset.in=btn_cond_reset.out; //get the edge of reset_button press
+    
+    reset_cond.in = edge_dt_btn_reset.out;  // normal reset signal for reset button
     rst = reset_cond.out;   // conditioned reset
-
-    btn_cond_p1.in=big_button; 
-    edge_dt_btn_p1.in=btn_cond_p1.out;
-    dec_ctr.inc = edge_dt_btn_p1.out;
+    
+    gameMachine.left_button = edge_dt_btn_left.out; // set game beta inputs to physical buttons
+    gameMachine.right_button = edge_dt_btn_right.out; // set game beta inputs to physical buttons
+    
+    dec_ctr.inc = gameMachine.decimal_counter_increase;
+    
     
     usb_tx = usb_rx;        // loop serial port
-
+    
     led = 8h00;             // turn LEDs off
-
+    
     io_led = 3x{{8h00}};    // turn LEDs off
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
-
-    ledcolor.d =rom_decoder.out;
     
-    led_strip.update=1; //sample write 
-      io_led[0] = rom_decoder.out[0][7:0]; // debugging rom values
-      io_led[1] = rom_decoder.out[0][15:8]; // debugging rom values
-      io_led[2] = countup.value; // debugging rom values
+    ledcolor.d =gameMachine.screen_output;
     
-    led_strip.color=ledcolor.q[led_strip.pixel]; 
+    led_strip.update=1; //sample write
+    io_led[0] = gameMachine.screen_output[0][7:0]; // debugging rom values
+    io_led[1] = gameMachine.screen_output[0][15:8]; // debugging rom values
+    io_led[2] = gameMachine.state_number;
+    
+    led_strip.color=ledcolor.q[led_strip.pixel];
     outled=led_strip.led;
     
     //update seven_seg

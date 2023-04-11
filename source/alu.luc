@@ -1,0 +1,58 @@
+module alu (
+    input alufn[6],
+    input x[16],
+    input y[16],
+    
+    output out[16],
+    output z,
+    output v,
+    output n,
+    output error
+  ) {
+    adder adder (.x(x), .y(y), .alufn(alufn[5:0]));
+    multiplier multiplier (.x(x), .y(y), .alufn(alufn[5:0]));
+    comparator comparator(.x(x), .y(y), .alufn(alufn[5:0]));
+    boolean boolean(.x(x), .y(y), .alufn(alufn[5:0]));
+    shifter shifter(.x(x), .y(y), .alufn(alufn[5:0]));
+  
+  always {
+    
+    case (alufn[5:4]) { 
+      b00: // add or sub or mul or div
+          case (alufn[1]) {
+            b0: //addition or subtraction
+                out = adder.s;
+                z = adder.z;
+                v = adder.v;
+                n = adder.n;
+                error = 0;            
+            
+            b1: // multiplication or division
+                out = multiplier.s;
+                z = multiplier.z;
+                v = multiplier.v;
+                n = multiplier.n;
+                error = multiplier.error;
+          default:
+          z = 0; v = 0; n = 0; error = 0; out = 0;        
+          
+        }
+      b01:
+        z = 0; v = 0; n = 0; error = 0;
+        out = boolean.out;
+        
+      b10:
+        z = 0; v = 0; n = 0; error = 0;
+        out = shifter.out;
+          
+      b11:
+        z = 0; v = 0; n = 0; error = 0;
+        out[0] = comparator.out; // assign out to lsb of output
+        out[15:1] = 0; // set remaining 15 msb to 0s;
+        
+      default:
+        z = 0; v = 0; n = 0; error = 0; out = 0;        
+    
+    }
+  }
+}

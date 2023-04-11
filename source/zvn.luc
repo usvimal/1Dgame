@@ -1,0 +1,37 @@
+module zvn (
+    input x[16],
+    input y[16],
+    input s[16],
+    input alufn[6],
+    output z,
+    output v,
+    output n
+  ) {
+
+  always {
+      case (alufn[5:0]) {
+      b000000:
+          z = ~|s;
+          v = (x[15] & (y[15]^alufn[0]) & ~s[15]) | (~x[15] & ~(y[15]^alufn[0]) & s[15]) ;
+          n = s[15];
+      
+      b000001:
+          z = ~|s;
+          v = (x[15] & (y[15]^alufn[0]) & ~s[15]) | (~x[15] & ~(y[15]^alufn[0]) & s[15]) ;
+          n = s[15];
+        
+      b000010:
+          z = ~|s;
+          v = (~x[15] & y[15] & ~s[15]) | (x[15] & ~y[15] & ~s[15]) | (~x[15] & ~y[15] & s[15]) | (x[15] & y[15] & s[15]);
+          n = s[15];
+      
+      default:
+          z = 0;
+          v = 0;
+          n = 0;
+          
+        }
+
+    
+  }
+}

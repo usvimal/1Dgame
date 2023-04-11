@@ -75,7 +75,9 @@ pin io_button[2] B23 pulldown;
 pin io_button[3] B24 pulldown;
 pin io_button[4] C49 pulldown;
 
-pin big_button C48 pulldown;
+pin left_button C48 pulldown;
+pin right_button C2 pulldown;
+pin reset_button C46 pulldown;
 
 pin io_sel[0] A9;
 pin io_sel[1] A8;

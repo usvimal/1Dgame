@@ -1,0 +1,145 @@
+module game_Control_Unit (
+  input clk,  // clock
+  input rst,  // reset
+  input left_button,
+  input right_button,
+  
+  input player_position_in[16],
+  
+  output alufn[6],
+  output asel[3],
+  output bsel[3],
+  output wdsel[2],
+  output we_regfile,
+  output regfile_write_address[4],
+  output regfile_read_address_a[4],
+  output regfile_read_address_b[4],
+  output decimal_counter_increase,
+  output decimal_counter_rst,
+  output screen_output[64][24],
+    
+    //DEBUG
+ output state_number
+  ) 
+
+{
+  const SLOWCLOCK_SIZE = 26;
+  
+  dff register[4](#INIT(b0000), .clk(clk), .rst(rst));
+  
+  .clk(clk){
+    fsm main_game={
+      IDLE,
+      START,
+      PLAYER_LEFT,
+      PLAYER_RIGHT,
+      NEXT_ROW
+    };
+    edge_detector slowClockEdge(#RISE(1), #FALL(0));
+    
+    .rst(rst){
+      rom rom;
+      rom_decoder rom_decoder;
+      counter slowClock(#SIZE(SLOWCLOCK_SIZE));
+    }
+  }
+  
+  always {
+    slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE-1];
+    
+    alufn = 0;
+    asel = 0;
+    bsel = 0;
+    wdsel =0;
+    we_regfile = 0;
+    regfile_write_address = 1111;
+    regfile_read_address_a = 0000;
+    regfile_read_address_b = 0000;
+    
+    // rom decoder inputs & outputs
+    rom_decoder.rom_maze = rom.out;
+    rom_decoder.player_pos = player_position_in;
+    screen_output = rom_decoder.out;
+    
+    // rom input
+    rom.player_row = register.q;
+    
+    decimal_counter_increase = 0;
+    decimal_counter_rst = 0;
+    
+    
+    //debug
+    state_number = b00000000;
+    
+    if (rst){
+      main_game.d = main_game.IDLE;
+    }
+    
+    case(main_game.q){
+        
+        main_game.IDLE:
+          state_number = 1;
+          
+          if (left_button | right_button) {
+            main_game.d = main_game.START;
+          }
+          
+          else {
+            main_game.d = main_game.IDLE;
+          }
+        
+        main_game.START:
+          regfile_write_address = h6;
+          we_regfile =1;
+          wdsel = b11;
+          state_number = b00000010;        // state 1
+          
+          if (left_button) {
+            main_game.d = main_game.PLAYER_LEFT;
+          }
+          
+          if (right_button) {
+            main_game.d = main_game.PLAYER_RIGHT;
+          }
+          
+          if (slowClockEdge.out == b1) {
+            main_game.d = main_game.NEXT_ROW;
+          }
+        
+        
+        main_game.PLAYER_LEFT:
+          alufn = b100000;                             // SHL
+          regfile_read_address_a = b0011;              // counter reg
+          asel = b00;                                  // Read Address A
+          bsel = b01;                                  // constant 1
+          we_regfile = 1;
+          wdsel = b00;
+          regfile_write_address = b0011;               //counter reg
+          state_number = b00000011;                    // state 2
+          
+          main_game.d = main_game.START;
+        
+        
+        main_game.PLAYER_RIGHT:
+          alufn = b100001;                             //SHR
+          regfile_read_address_a = b0011;              // counter reg
+          asel = b00;                                  // Read Address A
+          bsel = b01;                                  // constant 1
+          we_regfile = 1;
+          wdsel = b00;
+          regfile_write_address = b0011;               //counter reg
+          state_number = b00000100;                    // state 3
+        
+          main_game.d = main_game.START;
+        
+        main_game.NEXT_ROW:
+            if (register.q < 7) {
+              register.d = register.q + 1;
+            }
+            else {register.d = 0;}
+            
+            main_game.d = main_game.START;
+          
+      }
+  }
+}

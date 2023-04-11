@@ -1,0 +1,41 @@
+module adder (
+    input x[16],
+    input y[16],
+    input alufn[6],
+    
+    output s[16],
+    output z,
+    output v,
+    output n
+  ) {
+  
+  zvn zvn;
+   
+  sig out[16]; // out used as temp variable as s is write only
+    
+  always {
+    case (alufn[1:0]) {
+      b00:
+          out = x + y;
+      
+      b01:
+          out = x - y;
+      
+      default:
+          out = 16b0;
+          
+        }
+    
+    zvn.x = x;
+    zvn.y = y;
+    zvn.alufn = alufn;
+    zvn.s = out;
+
+    
+    z = zvn.z;
+    v = zvn.v;
+    n = zvn.n;
+    
+    s = out;
+  }
+}
