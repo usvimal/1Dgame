@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="LEDStripTest" board="Alchitry Au" language="Lucid" version="3">
+<project name="CoinRunner" board="Alchitry Au" language="Lucid" version="3">
   <files>
     <component>pipeline.luc</component>
     <src>zvn.luc</src>
