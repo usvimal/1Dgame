@@ -389,7 +389,7 @@ module game_Control_Unit (
         main_game.d = main_game.INTERMISSION_CHECK;
       
       
-      main_game.INTERMISSION_CHECK:
+      main_game.INTERMISSION_CHECK:                       // go to different states depending on whether it is a loading screen or level or last level
       state_number = b00010111;
         case(player_level) {
           2: main_game.d = main_game.PAUSE;
