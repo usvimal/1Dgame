@@ -37,15 +37,15 @@ module alu (
           z = 0; v = 0; n = 0; error = 0; out = 0;        
           
         }
-      b01:
+      b01: // boolean operations (not A, not B, xnor, xor, redxor)
         z = 0; v = 0; n = 0; error = 0;
         out = boolean.out;
         
-      b10:
+      b10: // shift operations (shift left, shift right, shift right arithmetic)
         z = 0; v = 0; n = 0; error = 0;
         out = shifter.out;
           
-      b11:
+      b11: // comparator operations (Compare Equal, Compare Less Than, Compare Less Than or Equal)
         z = 0; v = 0; n = 0; error = 0;
         out[0] = comparator.out; // assign out to lsb of output
         out[15:1] = 0; // set remaining 15 msb to 0s;

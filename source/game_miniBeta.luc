@@ -8,10 +8,13 @@ module game_miniBeta (
         
     
     output screen_output[64][24],
-    output state_number,  
+    output state_number[8],  
     output decimal_counter_increase,
-    output player_pos[8]
-//    output decimal_counter_rst
+    output a_value[16],
+    output player_row[16],
+    output player_level[16],
+    output player_pos[8],
+    output mazeLastRow[16]
   ) {
 
   //temp variables
@@ -33,9 +36,8 @@ module game_miniBeta (
     control_unit.right_button = right_button;
     control_unit.left_button = left_button;
     
-    screen_output = control_unit.screen_output;
-    // DEBUG
-    state_number = control_unit.state_number;
+    //output screen_output from control unit
+    screen_output = control_unit.screen_output;    
     
     //setup regfile
     regfile.read_address_a = control_unit.regfile_read_address_a;
@@ -43,18 +45,30 @@ module game_miniBeta (
     regfile.write_address = control_unit.regfile_write_address;
     regfile.write_enable = control_unit.we_regfile;
     
-    //
+    // pass values from regfile to control unit
     control_unit.player_position_in = regfile.position_out;
+    control_unit.ra_data = regfile.read_data_a;
+    control_unit.player_level = regfile.player_level_out;
+    control_unit.player_row = regfile.player_row_out;
     
-    //TEST dec counter increase
-    decimal_counter_increase = left_button & right_button;
+    //output debug values from regfile and control unit
+    mazeLastRow = control_unit.mazeLastRow;
+    state_number = control_unit.state_number;
+    player_level = regfile.player_level_out;
+    player_row = regfile.player_row_out;
+    a_value = regfile.read_data_a;
+    player_pos = regfile.position_out;
+    
+    
+    //increment decimal counter
+    decimal_counter_increase = control_unit.decimal_counter_increase;
     
     //setup asel 
     case(control_unit.asel){
       b00  : inputAlu_a = regfile.read_data_a;
-      b01  : inputAlu_a = 16h01;
-      b10  : inputAlu_a = 16h03;
-      b11  : inputAlu_a = 16h1F;
+      b01  : inputAlu_a = h01;
+      b10  : inputAlu_a = h06;
+      b11  : inputAlu_a = h30;
 
       default : 
         inputAlu_a = 0;
@@ -63,9 +77,9 @@ module game_miniBeta (
     //setup bsel
     case(control_unit.bsel){
       b00 : inputAlu_b = regfile.read_data_b;
-      b01 : inputAlu_b = 16h01;
-      b10  : inputAlu_b = 16h80;
-      b11  : inputAlu_b = 16h08;
+      b01 : inputAlu_b = h01;
+      b10 : inputAlu_b = h80;
+      b11 : inputAlu_b = h08;
 
       default: 
         inputAlu_b = 0;
@@ -81,14 +95,13 @@ module game_miniBeta (
     //wdsel mux
     case (control_unit.wdsel){
       b01 : regfile.write_data = 16h0000;
-      b11 : regfile.write_data= 16h0001;
-      b10 : regfile.write_data = regfile.last_row_out;
+      b10 : regfile.write_data = 16h0001;
+      b11 : regfile.write_data= control_unit.mazeLastRow;
       default:
         regfile.write_data = alu.out;
     
     
     }
-    player_pos = regfile.position_out;
     
   }
 }

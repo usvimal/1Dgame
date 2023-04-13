@@ -10,17 +10,17 @@ module regfile (
     output read_data_b[16],
     
     
-    //debug
-//    output level_out[16],
-//    output row_out[16],
+    //debug outputs
     output position_out[16],
-    output last_row_out[16]
+    output last_row_out[16],
+    output player_level_out[16],
+    output player_row_out[16]
     
   ) {
   
   .clk(clk){
     .rst(rst){
-      dff player_level[16](#INIT(0));
+      dff player_level[16](#INIT(b00000001));
       dff player_row[16](#INIT(0));
       dff player_position[16](#INIT(b00010000));
       dff mazeLastRow[16](#INIT(b00000000));
@@ -34,39 +34,38 @@ module regfile (
     // write port
     if (write_enable){
       case(write_address){
-        b0000 : player_level.d = write_data;
+        b0011 : player_level.d = write_data;
         b0010 : player_row.d = write_data;
-        b0011 : player_position.d = write_data;
-        b0100 : mazeLastRow.d = write_data;
+        b0100 : player_position.d = write_data;
+        b0101 : mazeLastRow.d = write_data;
         b1111 : temp_var.d = write_data;
       }
     }
       
       //read port a
       case(read_address_a){
-        b0000 : read_data_a = player_level.q;
         b0010 : read_data_a = player_row.q;
-        b0011 : read_data_a = player_position.q;
-        b0100 : read_data_a = mazeLastRow.q;
+        b0011 : read_data_a = player_level.q;
+        b0100 : read_data_a = player_position.q;
+        b0101 : read_data_a = mazeLastRow.q;
         b1111 : read_data_a = temp_var.q;
         default : read_data_a = 0;
       }
       
       //read port b
       case(read_address_b){
-        b0000 : read_data_b = player_level.q;
-        b0010 : read_data_b = player_row.q;
-        b0011 : read_data_b = player_position.q;
-        b0100 : read_data_b = mazeLastRow.q;
-        b0111 : read_data_b = temp_var.q;
+        b0010 : read_data_b = player_row.q;        
+        b0011 : read_data_b = player_level.q;
+        b0100 : read_data_b = player_position.q;
+        b0101 : read_data_b = mazeLastRow.q;
+        b1111 : read_data_b = temp_var.q;
         default : read_data_b = 0;
       }
       
       //For debugging
-//      level_out = player_level.q;
-//      row_out = player_row.q;
-//      position_out = player_position.q;
       last_row_out = mazeLastRow.q;
       position_out = player_position.q;
+      player_level_out = player_level.q;
+      player_row_out = player_row.q;
     }
 }

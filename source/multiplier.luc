@@ -17,7 +17,7 @@ module multiplier (
     error = 0;
     
     case (alufn[1:0]) { 
-    b10:
+    b10: // multiplication
       out = $signed(x) * $signed(y);
     
     b11: 
@@ -26,7 +26,7 @@ module multiplier (
         error = 1;
                 
     }
-     else {    
+     else {    //division
      out = $signed(x) / $signed(y);          
     }
      

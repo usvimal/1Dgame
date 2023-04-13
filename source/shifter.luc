@@ -10,9 +10,9 @@ module shifter (
     out = 0;
     
     case (alufn[1-:2]) {
-    b00: out = x << y[3-:4];
-    b01: out = x >> y[3-:4];
-    b11: out = $signed(x) >>> y[3-:4];
+    b00: out = x << y[3-:4];              // Shift Left
+    b01: out = x >> y[3-:4];              // Shift Right
+    b11: out = $signed(x) >>> y[3-:4];    // Shift Right Arithmetic
     }
   }
 }

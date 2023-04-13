@@ -7,11 +7,11 @@ module au_top (
     output usb_tx,          // USB->Serial output
     output io_led [3][8],   // LEDs on IO Shield
     output io_seg [8],      // 7-segment LEDs on IO Shield
+    output external_seg [12],
     output io_sel [4],      // Digit select on IO Shield
-    input io_button [5],    // 5 buttons on IO Shield
-    input io_dip [3][8],    // DIP switches on IO Shield
+    input io_dip [8],      // Leftmost DIP switches on IO Shield
     
-    // Game inputs
+    // Game button inputs
     input left_button,      // left player input
     input right_button,     // right player input
     input reset_button      // Game reset input
@@ -19,23 +19,23 @@ module au_top (
   
   sig rst;                  // reset signal
   
-  //  counter slowclock(#SIZE(1), #DIV(26), .clk(clk), .rst(rst));
-  ws2812b_writer led_strip(#PIXEL_COUNT(64), .clk(clk), .rst(rst)); //set for 64 pixels
+  ws2812b_writer led_strip(#PIXEL_COUNT(64), .clk(clk), .rst(rst)); // set for 64 pixels
   multi_seven_seg seg(.clk(clk), .rst(rst)); // initialize seven segment
-  multi_dec_ctr dec_ctr(.clk(clk), .rst(rst)); //initialize decimal counter
-  game_miniBeta gameMachine(.clk(clk), .rst(rst));
+  multi_dec_ctr dec_ctr(.clk(clk), .rst(rst)); // initialize decimal counter
+  game_miniBeta gameMachine(.clk(clk), .rst(rst)); // initialize game beta
+  
   
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
-    button_conditioner btn_cond_left;
-    button_conditioner btn_cond_right;
-    button_conditioner btn_cond_reset;
+    button_conditioner btn_cond_left;       //condition left button
+    button_conditioner btn_cond_right;      //condition right button
+    button_conditioner btn_cond_reset;      //condition reset button
     
-    edge_detector edge_dt_btn_left (#RISE(1), #FALL(0));
-    edge_detector edge_dt_btn_right (#RISE(1), #FALL(0));
-    edge_detector edge_dt_btn_reset (#RISE(1), #FALL(0));
+    edge_detector edge_dt_btn_left (#RISE(1), #FALL(0));     // detect rising and falling edges of left button
+    edge_detector edge_dt_btn_right (#RISE(1), #FALL(0));    // detect rising and falling edges of right button
+    edge_detector edge_dt_btn_reset (#RISE(1), #FALL(0));    // detect rising and falling edges of reset button
     dff ledcolor[64][24];
   }
   
@@ -54,11 +54,9 @@ module au_top (
     reset_cond.in = edge_dt_btn_reset.out;  // normal reset signal for reset button
     rst = reset_cond.out;   // conditioned reset
     
-    gameMachine.left_button = edge_dt_btn_left.out; // set game beta inputs to physical buttons
-    gameMachine.right_button = edge_dt_btn_right.out; // set game beta inputs to physical buttons
-    
-    dec_ctr.inc = gameMachine.decimal_counter_increase;
-    
+    // set game beta inputs to physical buttons
+    gameMachine.left_button = edge_dt_btn_left.out;   
+    gameMachine.right_button = edge_dt_btn_right.out; 
     
     usb_tx = usb_rx;        // loop serial port
     
@@ -66,22 +64,62 @@ module au_top (
     
     io_led = 3x{{8h00}};    // turn LEDs off
     io_seg = 8hff;          // turn segments off
+    external_seg = 12hff;   // turn segments off
+    
     io_sel = 4hf;           // select no digits
     
-    ledcolor.d =gameMachine.screen_output;
+    
+    dec_ctr.inc = gameMachine.decimal_counter_increase; // increment decimal_counter when player earns coins
     
     led_strip.update=1; //sample write
-    io_led[0] = gameMachine.screen_output[0][7:0]; // debugging rom values
-    io_led[1] = gameMachine.screen_output[0][15:8]; // debugging rom values
-    io_led[2] = gameMachine.state_number;
     
-    led_strip.color=ledcolor.q[led_strip.pixel];
-    outled=led_strip.led;
+    // convert and send main game output to external LED matrix
+    ledcolor.d = gameMachine.screen_output; 
+    led_strip.color = ledcolor.q[led_strip.pixel];
+    outled = led_strip.led;
     
-    //update seven_seg
+    //update seven_seg manually to each port
     seg.values = dec_ctr.digits;
-    io_seg = ~seg.seg;
-    io_sel = ~seg.sel;
+    external_seg[10] = ~seg.seg[7];
+    external_seg[6] = ~seg.seg[6];
+    external_seg[3] = ~seg.seg[5];
+    external_seg[1] = ~seg.seg[4];
+    external_seg[0] = ~seg.seg[3];
+    external_seg[9] = ~seg.seg[2];
+    external_seg[4] = ~seg.seg[1];
+    external_seg[2] = ~seg.seg[0];
+    
+    external_seg[11] = ~seg.sel[3];
+    external_seg[8] = ~seg.sel[2];
+    external_seg[7] = ~seg.sel[1];
+    external_seg[5] = ~seg.sel[0];
+    
+    // debugging
+    if (io_dip[0]){
+      io_led[0] = gameMachine.player_level[7:0];  // debug player level on io led
+      io_led[1] = gameMachine.player_level[15:8]; // debug player level on io led
+    }
+    
+    else if (io_dip[1]){
+      io_led[0] = gameMachine.player_row[7:0];  // debug player row on io led
+      io_led[1] = gameMachine.player_row[15:8]; // debug player row on io led
+    }
+    
+    else if (io_dip[2]){
+      io_led[0] = gameMachine.player_pos[7:0];  // debug player position on io led
+    }
+    
+    else if (io_dip[3]){
+      io_led[0] = gameMachine.state_number[7:0];  // debug state number on io led
+    }
+    
+    else if (io_dip[4]){
+      io_led[0] = gameMachine.mazeLastRow[7:0];  // debug maze last row on io led
+      io_led[1] = gameMachine.mazeLastRow[15:8]; // debug maze last row on io led
+      
+    }
+    
+    
     
   }
 }
