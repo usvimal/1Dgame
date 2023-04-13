@@ -179,7 +179,7 @@ module game_Control_Unit (
       
       
       
-      main_game.CHECK_LEFT:                       
+      main_game.CHECK_LEFT:                       // output 0 if player position at left edge
         alufn = CMPLT;
         regfile_read_address_a = b100;            // player position
         asel= b00;                                // Read Address A
@@ -191,7 +191,7 @@ module game_Control_Unit (
         
         main_game.d = main_game.BRANCH_LEFT;
       
-      main_game.CHECK_RIGHT:                      
+      main_game.CHECK_RIGHT:                      // output 0 if player position at right edge
         alufn = CMPLT;
         regfile_read_address_b = b100;            // player position
         asel= b01;                                // b1
@@ -203,7 +203,7 @@ module game_Control_Unit (
         
         main_game.d = main_game.BRANCH_RIGHT;
       
-      main_game.BRANCH_LEFT:                      // make sure player does not move out of screen
+      main_game.BRANCH_LEFT:                      // make sure player does not move out of screen by not shifting player position at left edge
         regfile_read_address_a = b1111;
         state_number = b00000101;          
         if (ra_data[0]) {
@@ -211,7 +211,7 @@ module game_Control_Unit (
         }
         else {main_game.d = main_game.START;}
       
-      main_game.BRANCH_RIGHT:
+      main_game.BRANCH_RIGHT:                    // make sure player does not move out of screen by not shifting player position at right edge
       state_number = b00000110;
         regfile_read_address_a = b1111;          // temp var
         if (ra_data[0]) {
@@ -220,7 +220,7 @@ module game_Control_Unit (
         
         else {main_game.d = main_game.START;}
       
-      main_game.PLAYER_LEFT:
+      main_game.PLAYER_LEFT:                         // shift player position to the left
         alufn = SHL;                                 
         regfile_read_address_a = b0100;              // player position
         asel = b00;                                  // Read Address A
@@ -233,7 +233,7 @@ module game_Control_Unit (
         main_game.d = main_game.START;
       
       
-      main_game.PLAYER_RIGHT:
+      main_game.PLAYER_RIGHT:                        // shift player position to the right
         alufn = SHR;                             
         regfile_read_address_a = b0100;              // player position
         asel = b00;                                  // Read Address A
@@ -245,7 +245,7 @@ module game_Control_Unit (
         
         main_game.d = main_game.START;
       
-      main_game.COIN_COLLISION:                      
+      main_game.COIN_COLLISION:                       // perform AND operation to check for overlaps between player and coin
         alufn = AND;
         asel= b00;                                    // Read Address A
         bsel = b00;                                   // Read Address B
@@ -258,7 +258,7 @@ module game_Control_Unit (
         
         main_game.d = main_game.CHECK_COIN;
       
-      main_game.CHECK_COIN:
+      main_game.CHECK_COIN:                          // output 1 if player collides with coin
         alufn = REDXOR;
         asel= b00;                                   // Read Address A
         we_regfile= 1;                               // enable write
@@ -269,14 +269,14 @@ module game_Control_Unit (
         
         main_game.d = main_game.BRANCH_COIN;
       
-      main_game.BRANCH_COIN:
+      main_game.BRANCH_COIN:                         // increments 7seg if coin was collected
         regfile_read_address_a = b1111;              // temp var
         state_number = b00001011;
         if (ra_data[0]) {decimal_counter_increase = 1;}
         
         main_game.d = main_game.LEFT_SHIFT_8;
       
-      main_game.LEFT_SHIFT_8:
+      main_game.LEFT_SHIFT_8:                           // shift player position by 8 to compare with obstacles
         alufn = SHL;
         asel = b00;                                     // Read Address A
         bsel = b11;                                     // constant 8
@@ -289,7 +289,7 @@ module game_Control_Unit (
         main_game.d = main_game.OBSTACLE_COLLISION;
       
       
-      main_game.OBSTACLE_COLLISION:
+      main_game.OBSTACLE_COLLISION:                     // perform AND operation to check for overlaps between player and obstacle
         alufn = AND;
         asel = b00;                                     // Read Address A
         bsel = b00;                                     // Read Address B
@@ -302,7 +302,7 @@ module game_Control_Unit (
         
         main_game.d = main_game.CHECK_OBSTACLE;
       
-      main_game.CHECK_OBSTACLE:
+      main_game.CHECK_OBSTACLE:                         // output 1 if player collides with obstacle
         alufn = REDXOR;
         asel = b00;                                     // Read Address A
         we_regfile = 1;                                 // enable write
@@ -314,7 +314,7 @@ module game_Control_Unit (
         main_game.d = main_game.BRANCH_OBSTACLE;
       
       
-      main_game.BRANCH_OBSTACLE:
+      main_game.BRANCH_OBSTACLE:                       // skip to next level if obstacle collided, else continue iterating row
         regfile_read_address_a = b1111;                // temp var
         state_number = b00001111;
         if (ra_data[0]) {main_game.d = main_game.LEVEL_CHECK;}
@@ -332,7 +332,7 @@ module game_Control_Unit (
         
         main_game.d = main_game.ROW_BRANCH;
       
-      main_game.ROW_BRANCH:
+      main_game.ROW_BRANCH:                            // if no more rows left to iterate, proceed to next level, else iterate next row
         regfile_read_address_a = b1111;                // temp var
         state_number = b00010001;
         if (ra_data[0]) {main_game.d = main_game.LEVEL_CHECK;}
@@ -350,13 +350,13 @@ module game_Control_Unit (
         
         main_game.d = main_game.LEVEL_BRANCH;
       
-      main_game.LEVEL_BRANCH:
+      main_game.LEVEL_BRANCH:                           // proceed to next level if level <6, else end the game
         regfile_read_address_a = b1111;                 // temp var
         state_number = b00010011;
         if (ra_data[0]) {main_game.d = main_game.IDLE;}
         else {main_game.d = main_game.NEXT_LEVEL;}
       
-      main_game.NEXT_ROW:
+      main_game.NEXT_ROW:                                // iterate next row to be displayed on screen
         alufn = ADD;
         asel= b00;                                       // Read Address A
         bsel = b01;                                      // constant 1
@@ -368,7 +368,7 @@ module game_Control_Unit (
         
         main_game.d = main_game.START;
       
-      main_game.NEXT_LEVEL:
+      main_game.NEXT_LEVEL:                               // iterate to next level for player_level
         alufn = ADD;
         asel= b00;                                        // Read Address A
         bsel = b01;                                       // constant 1
@@ -380,10 +380,10 @@ module game_Control_Unit (
         
         main_game.d = main_game.RESET_ROW;
       
-      main_game.RESET_ROW:
+      main_game.RESET_ROW:                                // reset to 1st row for new level
         we_regfile = 1;
         regfile_write_address = b0010;                    // player row
-        wdsel = b01;
+        wdsel = b01;                                      // constant 1
         state_number = b00010110;
         
         main_game.d = main_game.INTERMISSION_CHECK;
@@ -401,11 +401,11 @@ module game_Control_Unit (
       
       main_game.PAUSE:
       state_number = b00011000;
-        if (slowClockPauseEdge.out == b1) {              //proceed to next level on slowclock edge
+        if (slowClockPauseEdge.out == b1) {              // proceed to next level on slowclock edge
           main_game.d = main_game.NEXT_LEVEL;
         }
       
-      main_game.CLEAR_PLAYER:
+      main_game.CLEAR_PLAYER:                            // set player position to 0, deleting player
         we_regfile = 1;
         regfile_write_address = b0100;                   // player position
         wdsel = b01;
